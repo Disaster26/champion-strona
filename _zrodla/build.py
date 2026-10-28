@@ -20,6 +20,9 @@ BASE_404 = '/' if PROD else '/champion-strona/'
 WERSJA = '1'
 
 TEL = ('729 993 243', 'tel:+48729993243')
+# 28.10: telefony biura (odbierane caly czas w godzinach pracy biura) - prosba klienta
+TEL_BIURO = ('95 718 03 35', 'tel:+48957180335')
+TEL_BIURO_KOM = ('737 164 747', 'tel:+48737164747')
 MAIL = 'biuro.oskchampion@wp.pl'
 FB = 'https://www.facebook.com/p/Nauka-Jazdy-Champion-Witnica-61584649396147/'
 GODZINY = 'poniedziałek - piątek 10:00-17:00'
@@ -120,6 +123,8 @@ def schema_firma():
         'logo': DOMENA + '/img/logo-360.webp',
         'image': DOMENA + '/img/og.jpg',
         'telephone': '+48729993243',
+        'contactPoint': [{'@type': 'ContactPoint', 'contactType': 'biuro', 'telephone': '+48957180335'},
+                         {'@type': 'ContactPoint', 'contactType': 'biuro', 'telephone': '+48737164747'}],
         'email': MAIL,
         'taxID': '5961210126',
         'foundingDate': '2004-05',
@@ -220,7 +225,7 @@ def strona(sciezka, tytul, opis, tresc, glowna=False, schemy=None, preload='', n
     </div>
     <div>
       <p class="st-h">Kontakt</p>
-      <p><a href="{TEL[1]}">{TEL[0]}</a><br><a href="mailto:{MAIL}">{MAIL}</a><br>Biuro: {GODZINY}</p>
+      <p><a href="{TEL[1]}">{TEL[0]}</a><br>Biuro: <a href="{TEL_BIURO[1]}">{TEL_BIURO[0]}</a>, <a href="{TEL_BIURO_KOM[1]}">{TEL_BIURO_KOM[0]}</a><br><a href="mailto:{MAIL}">{MAIL}</a><br>Biuro: {GODZINY}</p>
       <p><a class="st-fb" href="{FB}" target="_blank" rel="noopener">{IKONA_FB}Facebook</a></p>
     </div>
     <div>
@@ -334,6 +339,7 @@ def dane_kontaktowe(h='h2'):
       <{h}>Kontakt</{h}>
       <dl class="kon-dl">
         <div><dt>Telefon</dt><dd><a class="kon-tel" href="{TEL[1]}">{TEL[0]}</a></dd></div>
+        <div><dt>Telefony do biura</dt><dd><a href="{TEL_BIURO[1]}">{TEL_BIURO[0]}</a> (stacjonarny)<br><a href="{TEL_BIURO_KOM[1]}">{TEL_BIURO_KOM[0]}</a> (komórkowy)</dd></div>
         <div><dt>E-mail</dt><dd><a href="mailto:{MAIL}">{MAIL}</a></dd></div>
         <div><dt>Biuro</dt><dd>ul. Gorzowska 6, 66-460 Witnica<br>{GODZINY}</dd></div>
         <div><dt>Plac manewrowy</dt><dd>ul. Kostrzyńska 12, 66-400 Gorzów Wielkopolski</dd></div>
