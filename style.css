@@ -367,3 +367,4 @@ figure{margin:0}
   .kafel,.mob,.ham span{transition:none}
 }
 .konto{white-space:nowrap;font-variant-numeric:tabular-nums}.konto-p{margin-top:12px}
+@media(max-width:380px){.konto{white-space:normal}}
