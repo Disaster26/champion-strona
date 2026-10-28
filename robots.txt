@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://champion-prawojazdy.pl/sitemap.xml
