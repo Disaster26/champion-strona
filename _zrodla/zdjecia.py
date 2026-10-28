@@ -71,7 +71,8 @@ zapisz(proporcja(p1, 4 / 3), 'kat-ce', [480, 800, 1200])
 
 # 2. Fiat Scudo z przyczepa (B+E), 1195x896
 p2 = otworz(os.path.join(NOWE, '1793176657104.jpg'))
-zamaz(p2, [(260, 675, 384, 736)])
+# 28.10: tablica CHAMP na Scudo to wizytowka szkoly (klient sam ja tak przygotowal) - NIE zamazujemy
+# zamaz(p2, [(260, 675, 384, 736)])
 zapisz(p2, 'kat-be', [480, 800, 1195])
 
 # 3. plac - szeroki widok, 4000x3000

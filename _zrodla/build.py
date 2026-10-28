@@ -24,6 +24,8 @@ TEL = ('729 993 243', 'tel:+48729993243')
 TEL_BIURO = ('95 718 03 35', 'tel:+48957180335')
 TEL_BIURO_KOM = ('737 164 747', 'tel:+48737164747')
 MAIL = 'biuro.oskchampion@wp.pl'
+# 28.10: konto do wplat za kurs (od klienta) - w cenniku i w kontakcie, jak u wiekszosci OSK
+KONTO = '88 1020 1954 0000 7702 0429 0433'
 FB = 'https://www.facebook.com/p/Nauka-Jazdy-Champion-Witnica-61584649396147/'
 GODZINY = 'poniedziałek - piątek 10:00-17:00'
 BIURO = (52.6732, 14.8977)
@@ -341,6 +343,7 @@ def dane_kontaktowe(h='h2'):
         <div><dt>Telefon</dt><dd><a class="kon-tel" href="{TEL[1]}">{TEL[0]}</a></dd></div>
         <div><dt>Telefony do biura</dt><dd><a href="{TEL_BIURO[1]}">{TEL_BIURO[0]}</a> (stacjonarny)<br><a href="{TEL_BIURO_KOM[1]}">{TEL_BIURO_KOM[0]}</a> (komórkowy)</dd></div>
         <div><dt>E-mail</dt><dd><a href="mailto:{MAIL}">{MAIL}</a></dd></div>
+        <div><dt>Konto do wpłat za kurs</dt><dd class="konto">{KONTO}</dd></div>
         <div><dt>Biuro</dt><dd>ul. Gorzowska 6, 66-460 Witnica<br>{GODZINY}</dd></div>
         <div><dt>Plac manewrowy</dt><dd>ul. Kostrzyńska 12, 66-400 Gorzów Wielkopolski</dd></div>
         <div><dt>Facebook</dt><dd><a href="{FB}" target="_blank" rel="noopener">Nauka Jazdy Champion Witnica</a></dd></div>
@@ -532,6 +535,7 @@ def oferta():
         <li>Podręczniki do nauki testów są w cenie kursu kat. B.</li>
         <li>Dodatkowa godzina jazdy kat. B: 150 zł dla kursantów OSK Champion, 160 zł dla kursantów z innych ośrodków.</li>
         <li>Honorujemy Kartę Dużej Rodziny.</li>
+        <li>Wpłaty za kurs można robić w biurze albo przelewem na konto <b class="konto">{KONTO}</b> (w tytule imię i nazwisko kursanta oraz kategoria).</li>
         <li>Plac manewrowy przy ul. Kostrzyńskiej 12 w Gorzowie Wielkopolskim jest utwardzony, oświetlony i dostępny tylko dla naszych kursantów.</li>
       </ul>
       <a class="dalej" href="{R}cennik/">Pełny cennik</a>
@@ -583,6 +587,7 @@ def cennik():
 {karty}    </div>
     <div class="cen-dol">
       <p class="kdr kdr-jasny"><img src="{R}img/kdr.webp" width="240" height="151" alt="" loading="lazy"> Honorujemy Kartę Dużej Rodziny.</p>
+      <p class="konto-p">Wpłaty za kurs: w biurze albo przelewem na konto <b class="konto">{KONTO}</b> (w tytule imię i nazwisko kursanta oraz kategoria).</p>
       <p>Opis kursów, pojazdów i liczby godzin znajdziesz na stronie <a href="{R}oferta/">Kursy</a>.</p>
     </div>
   </div>
