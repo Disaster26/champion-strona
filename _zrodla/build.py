@@ -76,7 +76,7 @@ CENNIK = [
         ('Kurs bez teorii lub z teorią online', '4 490 zł'),
         ('Kurs z teorią stacjonarną', '5 100 zł'),
         ('Kurs ekspresowy - dopłata', '1 000 zł'),
-        ('Godzina dodatkowa', '160 zł'),
+        ('Godzina dodatkowa dla kursantów z innych ośrodków', '160 zł'),
         ('Godzina dodatkowa dla kursantów OSK Champion', '150 zł'),
     ], '30 godzin teorii i 30 godzin jazd albo - po zdanym egzaminie teoretycznym w WORD - 4 godziny pierwszej pomocy i 30 godzin jazd. W cenie kursu pół godziny jazdy na placu egzaminacyjnym WORD oraz podręczniki do nauki testów.'),
     ('Kategoria B+E', 'Fiat Scudo z przyczepą', [
@@ -472,7 +472,7 @@ def oferta():
          ['Kurs na prawo jazdy kategorii B prowadzimy na Toyocie Yaris. Teorię możesz zrobić stacjonarnie w sali wykładowej w Witnicy albo online.',
           'Jeśli masz już zdany egzamin teoretyczny w WORD, robisz 4 godziny pierwszej pomocy i 30 godzin jazd. Na kurs zapraszamy także 17-latków.'],
          [('Pojazd', 'Toyota Yaris'), ('Teoria', '30 godzin - stacjonarnie albo online'), ('Jazdy', '30 godzin'), ('W cenie', 'pół godziny jazdy na placu egzaminacyjnym WORD, podręczniki do nauki testów'),
-          ('Cena', '4 490 zł (bez teorii lub z teorią online), 5 100 zł (z teorią stacjonarną)'), ('Kurs ekspresowy', 'dopłata 1 000 zł'), ('Godzina dodatkowa', '160 zł, dla kursantów OSK Champion 150 zł')]),
+          ('Cena', '4 490 zł (bez teorii lub z teorią online), 5 100 zł (z teorią stacjonarną)'), ('Kurs ekspresowy', 'dopłata 1 000 zł'), ('Godzina dodatkowa', '150 zł dla kursantów OSK Champion, 160 zł dla kursantów z innych ośrodków')]),
         ('kat-be', 'Kategoria B+E - samochód z przyczepą', 'kat-be', 'Fiat Scudo z przyczepą do nauki jazdy kat. B+E', 'Kategoria B+E',
          ['Prawo jazdy B+E pozwala prowadzić samochód osobowy z cięższą przyczepą, np. z lawetą, przyczepą kempingową albo przyczepą dla koni. Kurs to same jazdy, bez części teoretycznej.'],
          [('Pojazd', 'Fiat Scudo z przyczepą'), ('Teoria', 'brak'), ('Jazdy', '15 godzin'), ('Cena', '2 900 zł'), ('Godzina dodatkowa', '200 zł')]),
@@ -530,7 +530,7 @@ def oferta():
       <ul class="lista">
         <li>Na kurs kat. B zapraszamy także 17-latków.</li>
         <li>Podręczniki do nauki testów są w cenie kursu kat. B.</li>
-        <li>Kursanci OSK Champion płacą za dodatkową godzinę jazdy kat. B 150 zł zamiast 160 zł.</li>
+        <li>Dodatkowa godzina jazdy kat. B: 150 zł dla kursantów OSK Champion, 160 zł dla kursantów z innych ośrodków.</li>
         <li>Honorujemy Kartę Dużej Rodziny.</li>
         <li>Plac manewrowy przy ul. Kostrzyńskiej 12 w Gorzowie Wielkopolskim jest utwardzony, oświetlony i dostępny tylko dla naszych kursantów.</li>
       </ul>
