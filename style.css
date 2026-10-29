@@ -36,7 +36,7 @@ figure{margin:0}
 .logo img{height:52px;width:auto}
 /* 29.10: 'Nauka jazdy' jako tekst w pustym prawym dolnym rogu logo, jak w oryginale (ciemniejsze zloto: kontrast 3,25:1 z biela).
    Wieksza czcionka nie miesci sie miedzy pierscieniem a krawedzia obrazka - na telefonie napis schodzi pod koncowke 'ION'. */
-.logo-tag{position:absolute;right:-7px;top:42px;font-weight:700;font-size:10px;line-height:1;white-space:nowrap;color:#ad8b00;text-decoration:none}
+.logo-tag{position:absolute;right:-9px;top:44px;font-weight:700;font-size:10px;line-height:1;white-space:nowrap;color:#ad8b00;text-decoration:none}
 .menu{display:flex;gap:30px;margin-left:auto}
 .menu a{color:var(--ink);text-decoration:none;font-weight:600;font-size:17px;white-space:nowrap;padding:6px 0;border-bottom:3px solid transparent}
 .menu a:hover{border-color:var(--yel);color:var(--navy)}
@@ -384,6 +384,8 @@ figure{margin:0}
 .ph .okr+.art-data{margin-top:-6px}
 .art-sek{padding-top:56px}
 .art{max-width:720px}
+/* 29.10: kolumna tresci wpisow i FAQ wyrownana do lewej krawedzi .wrap (jak naglowek), nie wysrodkowana */
+.art.wrap{margin-left:max(24px,calc((100% - 1200px)/2))}
 .art>p,.art li,.art dd,.art dt{color:#33384d}
 .art>p{font-size:18px;line-height:1.62}
 .art h2{font-size:clamp(26px,2.4vw,32px);margin:44px 0 14px}
@@ -399,6 +401,7 @@ figure{margin:0}
 .kroki-n li:first-child{border-top:1px solid var(--line)}
 .kroki-n li::before{content:counter(k);position:absolute;left:0;top:11px;width:30px;height:30px;border-radius:6px;background:var(--blue);color:#fff;font-family:"Barlow SC",sans-serif;font-weight:700;font-size:17px;display:flex;align-items:center;justify-content:center}
 .skrot{background:var(--yel-soft);border-left:5px solid var(--yel);border-radius:0 10px 10px 0;padding:18px 22px 6px;margin:26px 0}
+.skrot .skrot-h{color:var(--navy)}
 .skrot-h{font-family:"Barlow SC",sans-serif;font-weight:700;font-size:21px;color:var(--navy);margin-bottom:8px}
 .skrot p,.skrot li{color:#33384d}
 .skrot ul{margin:0 0 12px;padding-left:20px}
@@ -436,11 +439,17 @@ figure{margin:0}
 .wpis-tx p{color:var(--muted);font-size:16px;flex:1 1 auto}
 .wpis-tx .dalej{align-self:flex-start;margin-top:4px}
 .wpisy-faq{margin:30px 0 0;color:#33384d}
+/* 29.10: najnowszy wpis na blogu jako szeroki kafel */
+.wpisy .wpis:first-child{grid-column:span 2}
+.wpisy .wpis:first-child .wpis-foto{aspect-ratio:2/1}
 @media (max-width:1024px){
   .wpisy{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .wpisy .wpis:first-child{grid-column:1/-1}
 }
 @media (max-width:760px){
   .okr{font-size:14px;margin-bottom:10px}
+  .art.wrap{margin-left:auto}
+  .wpisy .wpis:first-child .wpis-foto{aspect-ratio:3/2}
   .art-sek{padding-top:36px}
   .art>p{font-size:17px}
   .art h2{margin:36px 0 12px}

@@ -56,3 +56,12 @@ https://www.gov.pl/web/gov/uzyskaj-prawo-jazdy
 - Który urząd jest właściwy dla Witnicy/Kostrzyna/Dębna - napisano ogólnie "starostwo właściwe dla miejsca zamieszkania"; biuro podpowie.
 - Ważność orzeczenia lekarskiego dla kat. B - pominięto.
 - Wiedza ogólna bez osobnego źródła: w Gorzowie jeżdżą tramwaje (komunikacja miejska MZK).
+
+## Dopisane 29.10.2026 (poprawki po recenzjach)
+- Rozp. MI z 7.10.2026 w sprawie szkolenia i egzaminowania kierowców wykonujących przewóz drogowy (Dz.U. 2026 poz. 1355), § 11 ust. 1: kwalifikacja wstępna 280 godzin, przyspieszona 140 godzin. https://api.sejm.gov.pl/eli/acts/DU/2026/1355/text/O/D20261355.pdf
+- Ustawa o kierujących pojazdami art. 54: nagrywanie egzaminu B, zapis przechowywany 21 dni (dłużej przy skardze). Prawa kursanta do obejrzenia nagrania w ustawie NIE znaleziono - na stronie nie podano.
+- § 12 ust. 2 rozp. egzaminacyjnego (brzm. Dz.U. 2025 poz. 696): przerwanie na placu - przejechanie kołem przez linię zewnętrznej krawędzi stanowiska, najechanie/potrącenie pachołka, dwukrotne złe wykonanie zadania, zachowanie grożące kolizją lub uszkodzeniem pojazdu.
+- Art. 8a (Dz.U. 2025 poz. 1676): osoba towarzysząca 17-latkowi - siedzi z przodu, min. 25 lat, kat. B nieprzerwanie od 5 lat, bez zakazu w ostatnich 5 latach, trzeźwa; do 18 lat zakaz przewozu osób taksówką i przewozu rzeczy (wg recenzji, krbrd.gov.pl).
+- Kod 95: wpis do prawa jazdy na wniosek kierowcy, w starostwie (wymiana dokumentu, opłata).
+- PKK: dokument potwierdzający adres zameldowania, jeśli dowód osobisty go nie zawiera (gov.pl); termin nadania do 2 dni roboczych.
+- Pola O.1/O.2/F.2 dowodu rejestracyjnego - nie potwierdzono w źródle, nie podano.

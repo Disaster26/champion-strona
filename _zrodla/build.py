@@ -14,7 +14,9 @@ PROD = '--produkcja' in sys.argv
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 INFO = json.load(open(os.path.join(os.path.dirname(__file__), 'zdjecia.json'), encoding='utf-8'))
 
-DOMENA = 'https://champion-prawojazdy.pl'
+DOMENA = 'https://champion-witnica.pl'
+# 29.10: data ostatniej aktualizacji stron (sitemap lastmod); wpisy bloga maja wlasne 'zmiana' albo DATA
+AKTUALIZACJA = '2026-10-29'
 FORM_ADRES = 'https://formsubmit.co/ajax/' + ('biuro.oskchampion@wp.pl' if PROD else 'stasiu2626@gmail.com')
 BASE_404 = '/' if PROD else '/champion-strona/'
 WERSJA = '1'
@@ -28,6 +30,17 @@ MAIL = 'biuro.oskchampion@wp.pl'
 KONTO = '88 1020 1954 0000 7702 0429 0433'
 FB = 'https://www.facebook.com/p/Nauka-Jazdy-Champion-Witnica-61584649396147/'
 GODZINY = 'poniedziałek - piątek 10:00-17:00'
+
+
+def lam(t):
+    """29.10: miejsca, ktore nie moga sie lamac na koncu wiersza (godziny, pn-pt, 107 B, INFO-KIEROWCA, 17-latkow).
+    Fonty Barlow nie maja znaku U+2011 (twardy dywiz), dlatego span.nw zamiast &#8209;."""
+    t = re.sub(r'(?<![\d:])(\d{1,2}:\d\d-\d{1,2}:\d\d)(?![\d:])', r'<span class="nw">\1</span>', t)
+    t = re.sub(r'\b(pn-pt|INFO-KIEROWCA|\d+-latk\w*)', r'<span class="nw">\1</span>', t)
+    return t.replace('107 B', '107 B')
+
+
+GODZINY_H = lam(GODZINY)
 BIURO = (52.6732, 14.8977)
 PLAC = (52.72346, 15.19181)
 G_BIURO = 'https://www.google.com/maps/search/?api=1&query=52.6732%2C14.8977'
@@ -62,9 +75,30 @@ def img(name, alt, sizes, R, eager=False, cls=''):
             f'width="{W}" height="{H}" {load} decoding="async">')
 
 
+def og_jpg(nazwa):
+    """29.10: podglad linku (Facebook, komunikatory) jako JPG ~1,91:1, max 1200 px - nie wszystkie serwisy czytaja WebP.
+    Tworzony raz z najwiekszego WebP (img/og-<nazwa>.jpg), potem uzywany gotowy plik."""
+    from PIL import Image
+    fn = f'og-{nazwa}.jpg'
+    sc = os.path.join(ROOT, 'img', fn)
+    if not os.path.exists(sc):
+        im = Image.open(os.path.join(ROOT, 'img', INFO[nazwa][-1][0])).convert('RGB')
+        w, h = im.size
+        r = 1200 / 630
+        if w / h > r:
+            nw = round(h * r); im = im.crop(((w - nw) // 2, 0, (w - nw) // 2 + nw, h))
+        else:
+            nh = round(w / r); im = im.crop((0, (h - nh) // 2, w, (h - nh) // 2 + nh))
+        W = min(1200, im.width)
+        im = im.resize((W, round(W / r)), Image.LANCZOS)
+        im.save(sc, 'JPEG', quality=82, optimize=True, progressive=True)
+    with Image.open(sc) as im:
+        return fn, im.width, im.height
+
+
 def og_obraz(nazwa=None):
     if nazwa:
-        fn, w, h = INFO[nazwa][-1]
+        fn, w, h = og_jpg(nazwa)
         return (f'<meta property="og:image" content="{DOMENA}/img/{fn}">\n'
                 f'<meta property="og:image:width" content="{w}">\n<meta property="og:image:height" content="{h}">')
     return (f'<meta property="og:image" content="{DOMENA}/img/og.jpg">\n'
@@ -135,9 +169,13 @@ def schema_firma():
         'url': DOMENA + '/',
         'logo': DOMENA + '/img/logo-360.webp',
         'image': DOMENA + '/img/og.jpg',
+        'description': 'Ośrodek szkolenia kierowców w Witnicy: kursy prawa jazdy kat. B, B+E, C i C+E, kwalifikacja wstępna i szkolenia okresowe (kod 95). Plac manewrowy w Gorzowie Wielkopolskim.',
+        'priceRange': '1 000-6 500 zł',
+        'currenciesAccepted': 'PLN',
+        'paymentAccepted': 'wpłata w biurze, przelew bankowy',
         'telephone': '+48729993243',
-        'contactPoint': [{'@type': 'ContactPoint', 'contactType': 'biuro', 'telephone': '+48957180335'},
-                         {'@type': 'ContactPoint', 'contactType': 'biuro', 'telephone': '+48737164747'}],
+        'contactPoint': [{'@type': 'ContactPoint', 'contactType': 'customer service', 'telephone': t, 'availableLanguage': 'pl'}
+                         for t in ('+48729993243', '+48957180335', '+48737164747')],
         'email': MAIL,
         'taxID': '5961210126',
         'foundingDate': '2004-05',
@@ -180,6 +218,14 @@ def strona(sciezka, tytul, opis, tresc, glowna=False, schemy=None, preload='', n
     sch = ''
     for s in (schemy or []):
         sch += '<script type="application/ld+json">' + json.dumps(s, ensure_ascii=False, separators=(',', ':')) + '</script>\n'
+    # 29.10: w panelu hamburgera dodatkowo FAQ pod Blogiem (w menu desktopowym nie)
+    panel = ''
+    for href, nazwa in NAV:
+        cur = ' aria-current="page"' if sciezka == href or (href == 'blog/' and sciezka.startswith('blog/')) else ''
+        panel += f'    <a href="{R}{href}"{cur}>{nazwa}</a>\n'
+        if href == 'blog/':
+            cur = ' aria-current="page"' if sciezka == 'faq/' else ''
+            panel += f'    <a href="{R}faq/"{cur}>Pytania (FAQ)</a>\n'
     canon = '' if base is not None else f'<link rel="canonical" href="{DOMENA}/{sciezka}">\n'
     dom = R if R else './'
     return f'''<!doctype html>
@@ -197,6 +243,7 @@ def strona(sciezka, tytul, opis, tresc, glowna=False, schemy=None, preload='', n
 <meta property="og:description" content="{e(opis)}">
 <meta property="og:url" content="{DOMENA}/{sciezka}">
 {og_obraz(og_img)}
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="{R}favicon.ico" sizes="32x32">
 <link rel="icon" href="{R}favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="{R}apple-touch-icon.png">
@@ -219,8 +266,8 @@ def strona(sciezka, tytul, opis, tresc, glowna=False, schemy=None, preload='', n
   </div>
   <nav class="panel" id="panel" hidden aria-label="Menu">
     <a href="{dom}"{' aria-current="page"' if glowna else ''}>Strona główna</a>
-{nav.replace('      <a', '    <a')}    <a class="panel-fb" href="{FB}" target="_blank" rel="noopener">{IKONA_FB}Facebook - Nauka Jazdy Champion Witnica</a>
-    <p class="panel-info">ul. Gorzowska 6, Witnica<br>biuro {GODZINY}</p>
+{panel}    <a class="panel-fb" href="{FB}" target="_blank" rel="noopener">{IKONA_FB}Facebook - Nauka Jazdy Champion Witnica</a>
+    <p class="panel-info">ul. Gorzowska 6, Witnica<br>biuro {GODZINY_H}</p>
   </nav>
 </header>
 
@@ -238,7 +285,7 @@ def strona(sciezka, tytul, opis, tresc, glowna=False, schemy=None, preload='', n
     </div>
     <div>
       <p class="st-h">Kontakt</p>
-      <p><a href="{TEL[1]}">{TEL[0]}</a><br>Biuro: <a href="{TEL_BIURO[1]}">{TEL_BIURO[0]}</a>, <a href="{TEL_BIURO_KOM[1]}">{TEL_BIURO_KOM[0]}</a><br><a href="mailto:{MAIL}">{MAIL}</a><br>Biuro: {GODZINY}</p>
+      <p><a href="{TEL[1]}">{TEL[0]}</a><br>Biuro: <a href="{TEL_BIURO[1]}">{TEL_BIURO[0]}</a>, <a href="{TEL_BIURO_KOM[1]}">{TEL_BIURO_KOM[0]}</a><br><a href="mailto:{MAIL}">{MAIL}</a><br>Biuro: {GODZINY_H}</p>
       <p><a class="st-fb" href="{FB}" target="_blank" rel="noopener">{IKONA_FB}Facebook</a></p>
     </div>
     <div>
@@ -360,7 +407,7 @@ def mapa(R, nazwa, h, adres, alt, glink, trasa, opis=''):
 def mapy(R):
     return f'''<div class="mapy-wrap">
     <div class="mapy">
-      {mapa(R, 'mapa-biuro', 'Biuro i sala wykładowa', 'ul. Gorzowska 6, 66-460 Witnica', 'Mapa: biuro Nauki Jazdy Champion przy ul. Gorzowskiej 6 w Witnicy', G_BIURO, G_BIURO_TRASA, GODZINY)}
+      {mapa(R, 'mapa-biuro', 'Biuro i sala wykładowa', 'ul. Gorzowska 6, 66-460 Witnica', 'Mapa: biuro Nauki Jazdy Champion przy ul. Gorzowskiej 6 w Witnicy', G_BIURO, G_BIURO_TRASA, GODZINY_H)}
       {mapa(R, 'mapa-plac', 'Plac manewrowy', 'ul. Kostrzyńska 12, 66-400 Gorzów Wielkopolski', 'Mapa: plac manewrowy przy ul. Kostrzyńskiej 12 w Gorzowie Wielkopolskim', G_PLAC, G_PLAC_TRASA)}
     </div>
     <p class="mapy-osm">Mapy © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">autorzy OpenStreetMap</a></p>
@@ -375,7 +422,7 @@ def dane_kontaktowe(h='h2'):
         <div><dt>Telefony do biura</dt><dd><a href="{TEL_BIURO[1]}">{TEL_BIURO[0]}</a> (stacjonarny)<br><a href="{TEL_BIURO_KOM[1]}">{TEL_BIURO_KOM[0]}</a> (komórkowy)</dd></div>
         <div><dt>E-mail</dt><dd><a href="mailto:{MAIL}">{MAIL}</a></dd></div>
         <div><dt>Konto do wpłat za kurs</dt><dd class="konto">{KONTO}</dd></div>
-        <div><dt>Biuro</dt><dd>ul. Gorzowska 6, 66-460 Witnica<br>{GODZINY}</dd></div>
+        <div><dt>Biuro</dt><dd>ul. Gorzowska 6, 66-460 Witnica<br>{GODZINY_H}</dd></div>
         <div><dt>Plac manewrowy</dt><dd>ul. Kostrzyńska 12, 66-400 Gorzów Wielkopolski</dd></div>
         <div><dt>Facebook</dt><dd><a href="{FB}" target="_blank" rel="noopener">Nauka Jazdy Champion Witnica</a></dd></div>
       </dl>
@@ -424,9 +471,9 @@ def glowna():
     </picture>
   </figure>
   <div class="hero-in">
-    <p class="hero-adr">ul. Gorzowska 6, Witnica - biuro pn-pt 10:00-17:00</p>
+    <p class="hero-adr">ul. Gorzowska 6, Witnica - biuro {lam("pn-pt 10:00-17:00")}</p>
     <h1>Prawo jazdy kat. B, B+E, C i C+E w Witnicy</h1>
-    <p class="lead">Ośrodek Szkolenia Kierowców Champion szkoli od 2004 roku. Kurs B robisz na Toyocie Yaris, a manewry ćwiczysz na placu w Gorzowie Wielkopolskim, który jest tylko dla naszych kursantów.</p>
+    <p class="lead">OSK Champion szkoli od 2004 roku. Kurs B robisz na Toyocie Yaris, a manewry ćwiczysz na placu w Gorzowie Wielkopolskim, który jest tylko dla naszych kursantów.</p>
     <div class="hero-cta" id="heroCta">
       <a class="btn" href="#zapisy">Zapisz się na kurs</a>
       <a class="lnk" href="cennik/">Cennik kursów</a>
@@ -454,13 +501,13 @@ def glowna():
   <div class="wrap zap-grid">
     <div class="zap-txt">
       <h2>Zapisy na kurs</h2>
-      <p>Zapisać się można w biurze przy ul. Gorzowskiej 6 w Witnicy (pn-pt 10:00-17:00), telefonicznie pod numerem <a href="{TEL[1]}">{TEL[0]}</a> albo przez formularz. Biuro poda najbliższy termin rozpoczęcia kursu.</p>
+      <p>Zapisać się można w biurze przy ul. Gorzowskiej 6 w Witnicy ({lam("pn-pt 10:00-17:00")}), telefonicznie pod numerem <a href="{TEL[1]}">{TEL[0]}</a> albo przez formularz. Biuro poda najbliższy termin rozpoczęcia kursu.</p>
       <ul class="kroki">
         <li><b>Profil kandydata na kierowcę (PKK).</b> Przed kursem potrzebny jest numer PKK - pomagamy przygotować dokumenty.</li>
         <li><b>Teoria.</b> Na kursie kat. B wybierasz teorię stacjonarną w sali wykładowej w Witnicy albo teorię online.</li>
         <li><b>Jazdy.</b> Kat. B na Toyocie Yaris. Manewry ćwiczysz na placu w Gorzowie, w cenie kursu jest też pół godziny jazdy na placu egzaminacyjnym WORD.</li>
       </ul>
-      <p>Na kurs kat. B zapraszamy także 17-latków. Podręczniki do nauki testów są w cenie kursu.</p>
+      <p>Na kurs kat. B zapraszamy także {lam("17-latków")}. Podręczniki do nauki testów są w cenie kursu.</p>
       <p class="kdr"><img src="img/kdr.webp" width="240" height="151" alt="" loading="lazy"> Honorujemy Kartę Dużej Rodziny.</p>
     </div>
     {formularz(R, 'zapis', 'Zostaw numer - oddzwonimy', 'h3')}
@@ -493,7 +540,7 @@ def glowna():
     pre = (f'<link rel="preload" as="image" imagesrcset="{", ".join(f"img/{fn} {w}w" for fn, w, h in hm)}" imagesizes="100vw" media="(max-width:760px)" fetchpriority="high">\n'
            f'<link rel="preload" as="image" imagesrcset="{", ".join(f"img/{fn} {w}w" for fn, w, h in hero)}" imagesizes="46vw" media="(min-width:761px)" fetchpriority="high">\n')
     zapisz('', strona('', 'Nauka Jazdy Champion Witnica - prawo jazdy B, B+E, C, C+E',
-                      'Ośrodek Szkolenia Kierowców Champion w Witnicy: kursy prawa jazdy kat. B, B+E, C, C+E, kwalifikacja wstępna i szkolenia okresowe (kod 95). Plac manewrowy w Gorzowie Wlkp. Tel. 729 993 243.',
+                      'Nauka jazdy w Witnicy: prawo jazdy kat. B, B+E, C, C+E, kwalifikacja wstępna i kod 95. Plac manewrowy w Gorzowie Wlkp., biuro pn-pt 10-17. Tel. 729 993 243.',
                       tresc, glowna=True, schemy=[schema_firma()], preload=pre))
 
 
@@ -504,11 +551,11 @@ def oferta():
     bloki = [
         ('kat-b', 'Kategoria B - samochód osobowy', 'kat-b', 'Toyota Yaris Nauki Jazdy Champion na placu manewrowym', 'Kategoria B',
          ['Kurs na prawo jazdy kategorii B prowadzimy na Toyocie Yaris. Teorię możesz zrobić stacjonarnie w sali wykładowej w Witnicy albo online.',
-          'Jeśli masz już zdany egzamin teoretyczny w WORD, robisz 4 godziny pierwszej pomocy i 30 godzin jazd. Na kurs zapraszamy także 17-latków.'],
+          'Jeśli masz już zdany egzamin teoretyczny w WORD, robisz 4 godziny pierwszej pomocy i 30 godzin jazd. Na kurs zapraszamy także ' + lam('17-latków') + '.'],
          [('Pojazd', 'Toyota Yaris'), ('Teoria', '30 godzin - stacjonarnie albo online'), ('Jazdy', '30 godzin'), ('W cenie', 'pół godziny jazdy na placu egzaminacyjnym WORD, podręczniki do nauki testów'),
           ('Cena', '4 490 zł (bez teorii lub z teorią online), 5 100 zł (z teorią stacjonarną)'), ('Kurs ekspresowy', 'dopłata 1 000 zł'), ('Godzina dodatkowa', '150 zł dla kursantów OSK Champion, 160 zł dla kursantów z innych ośrodków')]),
         ('kat-be', 'Kategoria B+E - samochód z przyczepą', 'kat-be', 'Fiat Scudo z przyczepą do nauki jazdy kat. B+E', 'Kategoria B+E',
-         ['Prawo jazdy B+E pozwala prowadzić samochód osobowy z cięższą przyczepą, np. z lawetą, przyczepą kempingową albo przyczepą dla koni. Kurs to same jazdy, bez części teoretycznej.'],
+         ['Prawo jazdy B+E pozwala prowadzić samochód osobowy z cięższą przyczepą, np. z lawetą, przyczepą kempingową albo przyczepą dla koni. Kurs to same jazdy, bez części teoretycznej. Kiedy wystarczy kod 96, a kiedy potrzebne jest B+E, wyjaśniamy we wpisie <a href="../blog/prawo-jazdy-be-przyczepa-b96/">B+E czy kod 96</a>.'],
          [('Pojazd', 'Fiat Scudo z przyczepą'), ('Teoria', 'brak'), ('Jazdy', '15 godzin'), ('Cena', '2 900 zł'), ('Godzina dodatkowa', '200 zł')]),
         ('kat-c', 'Kategoria C - samochód ciężarowy', 'kat-c', 'Ciężarówka MAN TGL OSK Champion na placu manewrowym', 'Kategoria C',
          ['Kurs kategorii C prowadzimy na ciężarówce MAN TGL 12.240. Jeśli masz zdany egzamin teoretyczny w WORD, robisz tylko 30 godzin jazd.'],
@@ -517,10 +564,10 @@ def oferta():
          ['Kurs kategorii C+E prowadzimy na ciągniku MAN TGX 18.500 z naczepą Wielton. To same jazdy, bez części teoretycznej.'],
          [('Pojazd', 'MAN TGX 18.500 z naczepą Wielton'), ('Teoria', 'brak'), ('Jazdy', '25 godzin'), ('Cena', '6 500 zł'), ('Godzina dodatkowa', '280 zł')]),
         ('kwalifikacja', 'Kwalifikacja wstępna C, CE', 'kwal', 'Ciężarówka OSK Champion z napisem kwalifikacje wstępne i szkolenia okresowe', 'Kwalifikacja wstępna',
-         ['Kwalifikacja wstępna jest dla osób, które chcą zawodowo przewozić rzeczy samochodami ciężarowymi kategorii C i C+E. Prowadzimy kwalifikację pełną i przyspieszoną.'],
+         ['Kwalifikacja wstępna jest dla osób, które chcą zawodowo przewozić rzeczy samochodami ciężarowymi kategorii C i C+E. Prowadzimy kwalifikację pełną i przyspieszoną. Wiek, badania i kod 95 opisujemy we wpisie o <a href="../blog/prawo-jazdy-c-ce-kwalifikacja-wstepna/">prawie jazdy kat. C i C+E</a>.'],
          [('Kwalifikacja wstępna przyspieszona', '3 500 zł'), ('Kwalifikacja wstępna', '5 900 zł')]),
         ('szkolenie-okresowe', 'Szkolenie okresowe C, CE (kod 95)', 'okres', 'Pomoce dydaktyczne do zajęć z mocowania ładunku', 'Szkolenie okresowe',
-         ['Szkolenie okresowe dla kierowców zawodowych kategorii C i C+E trwa 35 godzin, czyli 5 dni. Po ukończeniu szkolenia do prawa jazdy wpisywany jest kod 95.'],
+         ['Szkolenie okresowe dla kierowców zawodowych kategorii C i C+E trwa 35 godzin, czyli 5 dni. Po ukończeniu szkolenia składasz w starostwie wniosek o wpis kodu 95 do prawa jazdy.'],
          [('Czas', '35 godzin (5 dni)'), ('Wymagania', 'numer PKZ'), ('Cena', '1 000 zł')]),
     ]
     b = ''
@@ -557,12 +604,12 @@ def oferta():
     <div>
       <h2>Przed kursem</h2>
       <p>Do rozpoczęcia kursu na prawo jazdy potrzebny jest profil kandydata na kierowcę (PKK). Zakłada go wydział komunikacji starostwa albo urzędu miasta na podstawie wniosku, zdjęcia i orzeczenia lekarskiego. Kandydaci na kategorie C i C+E przechodzą też badanie psychologiczne. Osoba niepełnoletnia potrzebuje zgody rodzica lub opiekuna.</p>
-      <p>Pomagamy w przygotowaniu dokumentów do uzyskania PKK - zadzwoń do biura, podpowiemy, od czego zacząć.</p>
+      <p>Pomagamy w przygotowaniu dokumentów do uzyskania PKK - zadzwoń do biura, podpowiemy, od czego zacząć. Krok po kroku opisujemy to w poradniku <a href="{R}blog/pierwsza-jazda-jak-przygotowac-sie-do-kursu/">jak przygotować się do kursu prawa jazdy</a>.</p>
     </div>
     <div>
       <h2>Dobrze wiedzieć</h2>
       <ul class="lista">
-        <li>Na kurs kat. B zapraszamy także 17-latków.</li>
+        <li>Na kurs kat. B zapraszamy także {lam('17-latków')}.</li>
         <li>Podręczniki do nauki testów są w cenie kursu kat. B.</li>
         <li>Dodatkowa godzina jazdy kat. B: 150 zł dla kursantów OSK Champion, 160 zł dla kursantów z innych ośrodków.</li>
         <li>Honorujemy Kartę Dużej Rodziny.</li>
@@ -575,8 +622,8 @@ def oferta():
 </section>
 
 {cta(R)}'''
-    zapisz('oferta', strona('oferta/', 'Kursy prawa jazdy B, B+E, C, C+E i kod 95 - Witnica | OSK Champion',
-                            'Kurs prawa jazdy kat. B na Toyocie Yaris, B+E, C i C+E oraz kwalifikacja wstępna i szkolenie okresowe (kod 95). Teoria w Witnicy, plac manewrowy w Gorzowie Wlkp.',
+    zapisz('oferta', strona('oferta/', 'Kursy prawa jazdy B, B+E, C, C+E i kod 95 | Champion Witnica',
+                            'Kurs prawa jazdy kat. B na Toyocie Yaris, B+E, C i C+E, kwalifikacja wstępna i szkolenie okresowe (kod 95). Teoria w Witnicy, plac w Gorzowie Wlkp.',
                             tresc, schemy=[okruszki('oferta/', 'Kursy')]))
 
 
@@ -585,7 +632,7 @@ def cta(R):
   <div class="wrap cta-in">
     <div>
       <h2>Zapytaj o najbliższy termin kursu</h2>
-      <p>Biuro w Witnicy jest czynne od poniedziałku do piątku w godz. 10:00-17:00.</p>
+      <p>Biuro w Witnicy jest czynne od poniedziałku do piątku w godz. {lam('10:00-17:00')}.</p>
     </div>
     <div class="cta-przyc">
       <a class="cta-tel" href="{TEL[1]}">{IKONA_TEL}{TEL[0]}</a>
@@ -608,7 +655,7 @@ def cennik():
       {p}
     </div>
 '''
-    tresc = ph('Cennik kursów',
+    tresc = ph('Cennik kursów prawa jazdy',
                'Ceny kursów prawa jazdy i szkoleń dla kierowców zawodowych w OSK Champion. O najbliższy termin i szczegóły zapytaj w biurze w Witnicy albo telefonicznie.',
                R) + f'''
 
@@ -619,14 +666,14 @@ def cennik():
     <div class="cen-dol">
       <p class="kdr kdr-jasny"><img src="{R}img/kdr.webp" width="240" height="151" alt="" loading="lazy"> Honorujemy Kartę Dużej Rodziny.</p>
       <p class="konto-p">Wpłaty za kurs: w biurze albo przelewem na konto <b class="konto">{KONTO}</b> (w tytule imię i nazwisko kursanta oraz kategoria).</p>
-      <p>Opis kursów, pojazdów i liczby godzin znajdziesz na stronie <a href="{R}oferta/">Kursy</a>.</p>
+      <p>Opis kursów, pojazdów i liczby godzin znajdziesz na stronie <a href="{R}oferta/">Kursy</a>. Ile kosztuje całe prawo jazdy kat. B, razem z egzaminami i opłatą za dokument, policzyliśmy we wpisie <a href="{R}blog/prawo-jazdy-kategorii-b-witnica-cena-czas/">Prawo jazdy kat. B w Witnicy - ile kosztuje i ile trwa</a>.</p>
     </div>
   </div>
 </section>
 
 {cta(R)}'''
-    zapisz('cennik', strona('cennik/', 'Cennik kursów prawa jazdy Witnica - B od 4 490 zł | OSK Champion',
-                            'Cennik OSK Champion Witnica: kat. B od 4 490 zł, B+E 2 900 zł, C 5 800 zł, C+E 6 500 zł, kwalifikacja wstępna od 3 500 zł, szkolenie okresowe 1 000 zł. Godziny dodatkowe.',
+    zapisz('cennik', strona('cennik/', 'Cennik prawa jazdy Witnica - kat. B od 4 490 zł | Champion',
+                            'Cennik OSK Champion w Witnicy: kat. B od 4 490 zł, B+E 2 900 zł, C 5 800 zł, C+E 6 500 zł, kwalifikacja wstępna od 3 500 zł, kod 95 1 000 zł.',
                             tresc, schemy=[okruszki('cennik/', 'Cennik')]))
 
 
@@ -654,8 +701,8 @@ def galeria():
     </div>
   </div>
 '''
-    tresc = ph('O szkole',
-               'Ośrodek Szkolenia Kierowców Champion powstał w maju 2004 roku, a od listopada 2025 roku prowadzą go nowi właściciele. Biuro i sala wykładowa są w Witnicy, plac manewrowy w Gorzowie Wielkopolskim.',
+    tresc = ph('O szkole jazdy Champion',
+               'OSK Champion powstał w maju 2004 roku, a od listopada 2025 roku prowadzą go nowi właściciele. Biuro i sala wykładowa są w Witnicy, plac manewrowy w Gorzowie Wielkopolskim.',
                R, 'siedziba', 'Siedziba Nauki Jazdy Champion przy ul. Gorzowskiej 6 w Witnicy') + f'''
 
 <section class="sek">
@@ -696,8 +743,8 @@ def galeria():
 </section>
 
 {cta(R)}'''
-    zapisz('galeria', strona('galeria/', 'O szkole i zdjęcia - plac manewrowy, pojazdy, biuro | OSK Champion Witnica',
-                             'OSK Champion działa w Witnicy od 2004 roku. Zdjęcia placu manewrowego przy ul. Kostrzyńskiej 12 w Gorzowie Wlkp., pojazdów szkoleniowych (Toyota Yaris, Fiat Scudo, MAN), biura i sali wykładowej.',
+    zapisz('galeria', strona('galeria/', 'O szkole - plac manewrowy i pojazdy | OSK Champion Witnica',
+                             'OSK Champion w Witnicy od 2004 r.: zdjęcia placu manewrowego przy ul. Kostrzyńskiej 12 w Gorzowie Wlkp., pojazdów (Toyota Yaris, Fiat Scudo, MAN) i biura.',
                              tresc, schemy=[okruszki('galeria/', 'O szkole')]))
 
 
@@ -705,7 +752,7 @@ def galeria():
 def kontakt():
     R = '../'
     tresc = ph('Kontakt',
-               f'Zadzwoń: <a href="{TEL[1]}">{TEL[0]}</a> albo odwiedź biuro przy ul. Gorzowskiej 6 w Witnicy, {GODZINY}.', R) + f'''
+               f'Zadzwoń: <a href="{TEL[1]}">{TEL[0]}</a> albo odwiedź biuro przy ul. Gorzowskiej 6 w Witnicy, {GODZINY_H}.', R) + f'''
 
 <section class="sek">
   <div class="wrap kon-grid">
@@ -726,7 +773,7 @@ def kontakt():
   </div>
 </section>'''
     zapisz('kontakt', strona('kontakt/', 'Kontakt - Nauka Jazdy Champion, ul. Gorzowska 6, Witnica',
-                             'Nauka Jazdy Champion: biuro ul. Gorzowska 6, 66-460 Witnica (pn-pt 10-17), plac manewrowy ul. Kostrzyńska 12, Gorzów Wlkp. Tel. 729 993 243, biuro.oskchampion@wp.pl.',
+                             'Biuro: ul. Gorzowska 6, 66-460 Witnica, pn-pt 10-17. Plac manewrowy: ul. Kostrzyńska 12, Gorzów Wlkp. Tel. 729 993 243, biuro.oskchampion@wp.pl.',
                              tresc, schemy=[schema_firma(), okruszki('kontakt/', 'Kontakt')]))
 
 
@@ -741,7 +788,7 @@ def polityka():
     <p>Administratorem danych osobowych jest Aurelia Gajewska, prowadząca działalność gospodarczą pod nazwą Nauka Jazdy Champion, ul. Gorzowska 6, 66-460 Witnica, NIP 596-121-01-26, REGON 543119611. Kontakt: <a href="mailto:{MAIL}">{MAIL}</a>, tel. <a href="{TEL[1]}">{TEL[0]}</a>.</p>
 
     <h2>Jakie dane i w jakim celu</h2>
-    <p>Przetwarzamy dane, które przekazujesz nam sam: przez formularz na stronie (imię i nazwisko, numer telefonu, adres e-mail, wybrany kurs i treść pytania), telefonicznie lub e-mailem. Wykorzystujemy je do odpowiedzi na zgłoszenie, ustalenia terminu kursu i zawarcia umowy szkolenia.</p>
+    <p>Przetwarzamy dane, które nam przekazujesz: przez formularz na stronie (imię i nazwisko, numer telefonu, adres e-mail, wybrany kurs i treść pytania), telefonicznie lub e-mailem. Wykorzystujemy je do odpowiedzi na zgłoszenie, ustalenia terminu kursu i zawarcia umowy szkolenia.</p>
     <p>Podstawą prawną jest podjęcie działań na Twoje żądanie przed zawarciem umowy i jej wykonanie (art. 6 ust. 1 lit. b RODO) oraz nasz prawnie uzasadniony interes, czyli udzielenie odpowiedzi na pytanie (art. 6 ust. 1 lit. f RODO). Podanie danych jest dobrowolne, ale bez numeru telefonu nie będziemy mogli oddzwonić.</p>
 
     <h2>Komu przekazujemy dane</h2>
@@ -814,7 +861,8 @@ def tokeny(t, R):
     t = t.replace('{R}', R).replace('{TEL_H}', TEL[1]).replace('{TEL}', TEL[0])
     # twarde spacje: '3 500 kg', '2 900 zł' nie lamia sie na koncu wiersza (nie dotyczy numerow telefonow - te sa w <a>, nowrap)
     t = re.sub(r'(?<=\d) (?=\d{3}(?!\d))', '\u00a0', t)
-    return re.sub(r'(?<=\d) (?=(?:zł|kg|t|km/h|r\.|lat|dni|godzin|minut)(?![\w]))', '\u00a0', t)
+    t = re.sub(r'(?<=\d) (?=(?:zł|kg|t|km/h|r\.|lat|dni|godzin|minut)(?![\w]))', '\u00a0', t)
+    return lam(t)
 
 
 def foto_art(t, R):
@@ -834,7 +882,7 @@ def faq_html(pary, R):
 
 
 def faq_schema(pary):
-    czysc = lambda t: re.sub(r'<[^>]+>', '', tokeny(t, '')).strip()
+    czysc = lambda t: html.unescape(re.sub(r'<[^>]+>', '', tokeny(t, ''))).strip()
     return {'@context': 'https://schema.org', '@type': 'FAQPage', 'mainEntity': [
         {'@type': 'Question', 'name': q, 'acceptedAnswer': {'@type': 'Answer', 'text': czysc(a)}} for q, a in pary]}
 
@@ -850,8 +898,8 @@ def wpis(w):
     R = '../../'
     sc = f'blog/{w["slug"]}/'
     data = f'\n      <p class="art-data"><time datetime="{BT.DATA}">{BT.DATA_TXT}</time></p>'
-    tresc = ph(w['h1'], w['lead'], R, w['foto'], w['foto_alt'],
-               nad=okr_html(R, [('blog/', 'Blog')], 'Wpis') + data)
+    tresc = ph(w['h1'], tokeny(w['lead'], R), R, w['foto'], w['foto_alt'],
+               nad=okr_html(R, [('blog/', 'Blog')], w['okr']) + data)
     zob = ''.join(f'<li><a href="{R}blog/{s}/">{WPISY[s]["h1"]}</a></li>' for s in w['zobacz'])
     tresc += f'''
 
@@ -869,7 +917,7 @@ def wpis(w):
 
     <div class="art-dalej">
       <h2>Przeczytaj też</h2>
-      <ul class="lista">{zob}<li><a href="{R}faq/">Pytania i odpowiedzi - wszystko w jednym miejscu</a></li></ul>
+      <ul class="lista">{zob}<li><a href="{R}faq/">Pytania o kurs prawa jazdy - wszystko w jednym miejscu</a></li></ul>
       <a class="dalej" href="{R}blog/">Wszystkie wpisy</a>
     </div>
   </article>
@@ -879,22 +927,23 @@ def wpis(w):
     fn = INFO[w['foto']][-1][0]
     art = {'@context': 'https://schema.org', '@type': 'BlogPosting',
            'headline': w['h1'], 'description': w['opis'], 'inLanguage': 'pl-PL',
-           'image': f'{DOMENA}/img/{fn}', 'datePublished': BT.DATA, 'dateModified': BT.DATA,
+           'image': f'{DOMENA}/img/{fn}', 'datePublished': BT.DATA, 'dateModified': w.get('zmiana', BT.DATA),
            'mainEntityOfPage': {'@type': 'WebPage', '@id': f'{DOMENA}/{sc}'},
            'author': {'@type': 'Organization', 'name': 'Nauka Jazdy Champion', 'url': DOMENA + '/'},
            'publisher': {'@type': 'Organization', '@id': DOMENA + '/#osk', 'name': 'Nauka Jazdy Champion',
                          'logo': {'@type': 'ImageObject', 'url': DOMENA + '/img/logo-360.webp'}}}
     zapisz(sc, strona(sc, w['tytul'], w['opis'], tresc, og_typ='article', og_img=w['foto'],
-                      schemy=[art, faq_schema(w['faq']), okruszki(sc, w['h1'], [('blog/', 'Blog')])]))
+                      schemy=[art, okruszki(sc, w['okr'], [('blog/', 'Blog')])]))  # 29.10: FAQPage tylko na /faq/
 
 
 def blog_lista():
     R = '../'
     S = '(max-width:760px) calc(100vw - 32px), (max-width:1024px) 46vw, 380px'
+    S1 = '(max-width:760px) calc(100vw - 32px), (max-width:1024px) calc(100vw - 48px), 790px'  # najnowszy wpis - szeroki kafel
     k = ''
-    for w in BT.WPISY:
+    for i, w in enumerate(BT.WPISY):
         k += f'''      <article class="wpis">
-        <a class="wpis-foto" href="{R}blog/{w['slug']}/" tabindex="-1" aria-hidden="true">{img(w['foto'], w['foto_alt'], S, R)}</a>
+        <a class="wpis-foto" href="{R}blog/{w['slug']}/" tabindex="-1" aria-hidden="true">{img(w['foto'], w['foto_alt'], S1 if i == 0 else S, R)}</a>
         <div class="wpis-tx">
           <time datetime="{BT.DATA}">{BT.DATA_TXT}</time>
           <h2><a href="{R}blog/{w['slug']}/">{w['h1']}</a></h2>
@@ -903,7 +952,7 @@ def blog_lista():
         </div>
       </article>
 '''
-    tresc = ph('Blog', 'Praktycznie o prawie jazdy: ile kosztuje kurs w Witnicy, jak wygląda egzamin w WORD w Gorzowie Wielkopolskim, kiedy potrzebne jest B+E, a kiedy kwalifikacja wstępna.', R,
+    tresc = ph('Blog o prawie jazdy', 'Praktycznie o prawie jazdy: ile kosztuje kurs w Witnicy, jak wygląda egzamin w WORD w Gorzowie Wielkopolskim, kiedy potrzebne jest B+E, a kiedy kwalifikacja wstępna.', R,
                nad=okr_html(R, [], 'Blog')) + f'''
 
 <section class="sek sek-alt">
@@ -918,8 +967,8 @@ def blog_lista():
     lista = {'@context': 'https://schema.org', '@type': 'Blog', 'name': 'Blog Nauki Jazdy Champion', 'url': DOMENA + '/blog/',
              'inLanguage': 'pl-PL', 'publisher': {'@type': 'Organization', '@id': DOMENA + '/#osk', 'name': 'Nauka Jazdy Champion'},
              'blogPost': [{'@type': 'BlogPosting', 'headline': w['h1'], 'url': f"{DOMENA}/blog/{w['slug']}/", 'datePublished': BT.DATA} for w in BT.WPISY]}
-    zapisz('blog', strona('blog/', 'Blog - prawo jazdy w Witnicy i egzamin w WORD Gorzów | OSK Champion',
-                          'Poradniki OSK Champion z Witnicy: koszt prawa jazdy kat. B, egzamin praktyczny w WORD Gorzów, B+E i kod 96, kat. C i C+E z kwalifikacją wstępną, przygotowanie do kursu.',
+    zapisz('blog', strona('blog/', 'Blog o prawie jazdy - Witnica i WORD Gorzów | OSK Champion',
+                          'Poradniki OSK Champion: koszt prawa jazdy kat. B w Witnicy, egzamin w WORD Gorzów, B+E i kod 96, kat. C i C+E z kwalifikacją wstępną, numer PKK.',
                           tresc, schemy=[lista, okruszki('blog/', 'Blog')]))
 
 
@@ -935,7 +984,7 @@ def faq_strona():
       </div>
     </div>
 '''
-    tresc = ph('Pytania i odpowiedzi', 'Krótkie odpowiedzi na pytania, które najczęściej słyszymy w biurze w Witnicy: zapisy, ceny, egzaminy w WORD Gorzów i kursy na przyczepę oraz ciężarówkę.', R,
+    tresc = ph('Pytania o kurs prawa jazdy', 'Krótkie odpowiedzi na pytania, które najczęściej słyszymy w biurze w Witnicy: zapisy, ceny, egzaminy w WORD Gorzów i kursy na przyczepę oraz ciężarówkę.', R,
                nad=okr_html(R, [], 'Pytania i odpowiedzi')) + f'''
 
 <section class="sek">
@@ -945,7 +994,7 @@ def faq_strona():
 </section>
 
 {cta(R)}'''
-    zapisz('faq', strona('faq/', 'Pytania i odpowiedzi - kursy prawa jazdy Witnica | OSK Champion',
+    zapisz('faq', strona('faq/', 'FAQ - pytania o kurs prawa jazdy w Witnicy | OSK Champion',
                          'Najczęstsze pytania o kursy prawa jazdy w OSK Champion w Witnicy: zapisy i PKK, ceny i płatności, egzaminy w WORD Gorzów, kursy B+E, C i C+E, kod 95.',
                          tresc, schemy=[faq_schema(wszystkie), okruszki('faq/', 'Pytania i odpowiedzi')]))
 
@@ -955,12 +1004,42 @@ def sitemap_robots():
     pri = {'': '1.0', 'polityka-prywatnosci/': '0.3', 'blog/': '0.7', 'faq/': '0.7'}
     pri.update({f'blog/{w["slug"]}/': '0.6' for w in BT.WPISY})
     x = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    mod = {f'blog/{w["slug"]}/': w.get('zmiana', BT.DATA) for w in BT.WPISY}
     for u in urls:
-        x += f'  <url><loc>{DOMENA}/{u}</loc><priority>{pri.get(u, "0.8")}</priority></url>\n'
+        x += f'  <url><loc>{DOMENA}/{u}</loc><lastmod>{mod.get(u, AKTUALIZACJA)}</lastmod><priority>{pri.get(u, "0.8")}</priority></url>\n'
     x += '</urlset>\n'
     open(os.path.join(ROOT, 'sitemap.xml'), 'w', encoding='utf-8', newline='\n').write(x)
     open(os.path.join(ROOT, 'robots.txt'), 'w', encoding='utf-8', newline='\n').write(
         f'User-agent: *\nAllow: /\n\nSitemap: {DOMENA}/sitemap.xml\n')
+
+
+def llms_txt():
+    """29.10: llms.txt - zwiezly opis szkoly dla asystentow AI, generowany z tych samych stalych co strona."""
+    t = ['# Nauka Jazdy Champion (OSK Champion), Witnica', '',
+         '> Ośrodek szkolenia kierowców w Witnicy (woj. lubuskie), działa od maja 2004 r. Kursy prawa jazdy kat. B, B+E, C i C+E, '
+         'kwalifikacja wstępna oraz szkolenia okresowe kierowców zawodowych (kod 95). Teoria w Witnicy, manewry na własnym placu w Gorzowie Wielkopolskim.', '',
+         '## Kontakt', '',
+         f'- Telefon: {TEL[0]}',
+         f'- Telefony do biura: {TEL_BIURO[0]} (stacjonarny), {TEL_BIURO_KOM[0]} (komórkowy)',
+         f'- E-mail: {MAIL}',
+         f'- Biuro i sala wykładowa: ul. Gorzowska 6, 66-460 Witnica, {GODZINY}',
+         '- Plac manewrowy: ul. Kostrzyńska 12, 66-400 Gorzów Wielkopolski (tylko dla kursantów szkoły)',
+         f'- Facebook: {FB}', '',
+         '## Pojazdy', '',
+         '- Kat. B: Toyota Yaris', '- Kat. B+E: Fiat Scudo z przyczepą', '- Kat. C: MAN TGL 12.240', '- Kat. C+E: MAN TGX 18.500 z naczepą Wielton', '',
+         '## Cennik', '']
+    for kat, poj, poz, uw in CENNIK:
+        t.append(f'- {kat} ({poj}): ' + '; '.join(f'{n} - {c}' for n, c in poz) + (f'. {uw}' if uw else ''))
+    t += ['- Honorujemy Kartę Dużej Rodziny. Wpłaty w biurze albo przelewem.', '',
+          '## Strony', '',
+          f'- [Kursy]({DOMENA}/oferta/): kursy B, B+E, C, C+E, kwalifikacja wstępna i szkolenie okresowe',
+          f'- [Cennik]({DOMENA}/cennik/)',
+          f'- [O szkole]({DOMENA}/galeria/): plac manewrowy, pojazdy, biuro',
+          f'- [Pytania (FAQ)]({DOMENA}/faq/)',
+          f'- [Kontakt]({DOMENA}/kontakt/)', '',
+          '## Blog', '']
+    t += [f'- [{w["h1"]}]({DOMENA}/blog/{w["slug"]}/): {w["kafel"]}' for w in BT.WPISY]
+    open(os.path.join(ROOT, 'llms.txt'), 'w', encoding='utf-8', newline='\n').write('\n'.join(t) + '\n')
 
 
 if __name__ == '__main__':
@@ -970,5 +1049,5 @@ if __name__ == '__main__':
         wpis(w)
     przekierowanie('kontakt-2', 'kontakt/', 'Kontakt')
     przekierowanie('polityka-cookies', 'polityka-prywatnosci/', 'Polityka prywatności')
-    sitemap_robots()
+    sitemap_robots(); llms_txt()
     print('Zbudowano:', 'PRODUKCJA' if PROD else 'TEST (noindex, formularz testowy)')

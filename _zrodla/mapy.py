@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw
 TU = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(TU, '..', 'img')
 CACHE = os.path.join(TU, '_kafle'); os.makedirs(CACHE, exist_ok=True)
-UA = 'champion-prawojazdy.pl static map build (kontakt: lukasz@bibliotekanaukowa.pl)'
+UA = 'champion-witnica.pl static map build (kontakt: lukasz@bibliotekanaukowa.pl)'
 
 PUNKTY = {
     'mapa-biuro': (52.6732, 14.8977, 17),     # biuro: ul. Gorzowska 6, Witnica (pin od klientki)

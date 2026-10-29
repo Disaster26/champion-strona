@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://champion-prawojazdy.pl/sitemap.xml
+Sitemap: https://champion-witnica.pl/sitemap.xml
