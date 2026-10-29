@@ -66,7 +66,9 @@ def zapisz(im, name, widths, q=72):
 # ---------------- nowe zdjecia od klientki (28.10.2026)
 # 1. MAN TGX z naczepa (C+E), 3585x2688, podglad 1400 px
 p1 = otworz(os.path.join(NOWE, '1793176157701.jpg')); s1 = p1.width / 1400
-zamaz(p1, [(160, 776, 232, 844)], s1)
+# 29.10 user: MAN TGX szkoly z tablica CHAMPION zamiast zamazania (piksele oryginalu 3585x2688)
+import sys; sys.path.insert(0, TU); import tablica
+tablica.naklej(p1, [(433, 2016), (565, 2055), (564, 2133), (431, 2081)])
 zapisz(proporcja(p1, 4 / 3), 'kat-ce', [480, 800, 1200])
 
 # 2. Fiat Scudo z przyczepa (B+E), 1195x896
@@ -91,7 +93,8 @@ zapisz(kadr(p4, (540, 350, 960, 665), s4), 'kat-c', [480, 800, 1200])
 
 # 5. plac - Yaris i tyl ciezarowki z napisem kwalifikacji
 p5 = otworz(os.path.join(NOWE, '20261028_092518.jpg')); s5 = p5.width / 1400
-zamaz(p5, [(348, 501, 387, 520), (528, 493, 562, 509), (412, 396, 449, 412)], s5)
+zamaz(p5, [(528, 493, 562, 509), (412, 396, 449, 412)], s5)  # obca ciezarowka + napis poprzedniego wlasciciela na plandece
+tablica.naklej(p5, [(1012, 1451), (1089, 1450), (1089, 1466), (1012, 1469)])  # tylna tablica MAN TGL szkoly
 # 29.10 user: Yaris szkoly na placu z tablica CHAMPION
 tablica.naklej(p5, [(2945, 1655), (3064, 1674), (3063, 1714), (2944, 1690)])
 zapisz(p5, 'plac-yaris', [480, 800, 1200, 1600], q=68)
