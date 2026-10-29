@@ -17,7 +17,10 @@ INFO = json.load(open(os.path.join(os.path.dirname(__file__), 'zdjecia.json'), e
 DOMENA = 'https://champion-witnica.pl'
 # 29.10: data ostatniej aktualizacji stron (sitemap lastmod); wpisy bloga maja wlasne 'zmiana' albo DATA
 AKTUALIZACJA = '2026-10-29'
-FORM_ADRES = 'https://formsubmit.co/ajax/' + ('biuro.oskchampion@wp.pl' if PROD else 'stasiu2626@gmail.com')
+# produkcja: wlasny skrypt PHP na serwerze home.pl (wyslij.php); test na GitHub Pages (bez PHP): FormSubmit
+FORM_ADRES = '/wyslij.php' if PROD else 'https://formsubmit.co/ajax/stasiu2626@gmail.com'
+FORM_RODO = ('Wiadomości z formularza są wysyłane z serwera tej strony bezpośrednio na naszą skrzynkę e-mail. Dane mogą trafić do dostawcy hostingu strony i dostawcy poczty e-mail - wyłącznie w zakresie potrzebnym do działania tych usług.' if PROD else
+             'Wiadomości z formularza są przekazywane na naszą skrzynkę e-mail za pośrednictwem usługi FormSubmit (formsubmit.co). Dane mogą też trafić do dostawcy hostingu strony i dostawcy poczty e-mail - wyłącznie w zakresie potrzebnym do działania tych usług. Korzystanie z usługi FormSubmit może wiązać się z przekazaniem danych poza Europejski Obszar Gospodarczy.')
 BASE_404 = '/' if PROD else '/champion-strona/'
 WERSJA = '1'
 
@@ -792,7 +795,7 @@ def polityka():
     <p>Podstawą prawną jest podjęcie działań na Twoje żądanie przed zawarciem umowy i jej wykonanie (art. 6 ust. 1 lit. b RODO) oraz nasz prawnie uzasadniony interes, czyli udzielenie odpowiedzi na pytanie (art. 6 ust. 1 lit. f RODO). Podanie danych jest dobrowolne, ale bez numeru telefonu nie będziemy mogli oddzwonić.</p>
 
     <h2>Komu przekazujemy dane</h2>
-    <p>Wiadomości z formularza są przekazywane na naszą skrzynkę e-mail za pośrednictwem usługi FormSubmit (formsubmit.co). Dane mogą też trafić do dostawcy hostingu strony i dostawcy poczty e-mail - wyłącznie w zakresie potrzebnym do działania tych usług. Korzystanie z usługi FormSubmit może wiązać się z przekazaniem danych poza Europejski Obszar Gospodarczy.</p>
+    <p>{FORM_RODO}</p>
 
     <h2>Jak długo przechowujemy dane</h2>
     <p>Dane ze zgłoszenia przechowujemy przez czas potrzebny do załatwienia sprawy, a jeśli dojdzie do szkolenia - przez okres wymagany przepisami oraz okres przedawnienia ewentualnych roszczeń.</p>
