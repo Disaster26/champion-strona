@@ -82,13 +82,18 @@ zapisz(p3, 'plac-szeroki', [480, 800, 1200, 1600], q=68)
 
 # 4. plac - MAN TGL OSK Champion (kat. C)
 p4 = otworz(os.path.join(NOWE, '20261028_092431.jpg')); s4 = p4.width / 1400
-zamaz(p4, [(470, 548, 505, 567), (626, 558, 665, 578), (553, 506, 592, 542), (666, 460, 710, 504), (1276, 530, 1312, 551)], s4)
+zamaz(p4, [(470, 548, 505, 567), (553, 506, 592, 542), (666, 460, 710, 504), (1276, 530, 1312, 551)], s4)
+# 29.10 user: MAN TGL szkoly z tablica CHAMPION (piksele oryginalu 4000x3000); obce auta zostaja zamazane
+import sys; sys.path.insert(0, TU); import tablica
+tablica.naklej(p4, [(1803, 1610), (1884, 1612), (1883, 1638), (1803, 1634)])
 zapisz(p4, 'plac-ciezarowki', [480, 800, 1200, 1600], q=68)
 zapisz(kadr(p4, (540, 350, 960, 665), s4), 'kat-c', [480, 800, 1200])
 
 # 5. plac - Yaris i tyl ciezarowki z napisem kwalifikacji
 p5 = otworz(os.path.join(NOWE, '20261028_092518.jpg')); s5 = p5.width / 1400
-zamaz(p5, [(348, 501, 387, 520), (528, 493, 562, 509), (412, 396, 449, 412), (1023, 572, 1080, 606)], s5)
+zamaz(p5, [(348, 501, 387, 520), (528, 493, 562, 509), (412, 396, 449, 412)], s5)
+# 29.10 user: Yaris szkoly na placu z tablica CHAMPION
+tablica.naklej(p5, [(2945, 1655), (3064, 1674), (3063, 1714), (2944, 1690)])
 zapisz(p5, 'plac-yaris', [480, 800, 1200, 1600], q=68)
 zapisz(kadr(p5, (880, 330, 1400, 720), s5), 'kat-b', [480, 800, 1200])
 zapisz(kadr(p5, (270, 340, 510, 520), s5), 'kwal', [480, 686])
