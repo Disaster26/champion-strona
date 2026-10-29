@@ -63,14 +63,16 @@ $wiersze = [
 ];
 $tab = '';
 foreach ($wiersze as $k => $v) {
-    $tab .= '<tr><td style="padding:10px 14px;border-bottom:1px solid #e5e5ef;color:#555;white-space:nowrap;vertical-align:top">' . $h($k) .
-            '</td><td style="padding:10px 14px;border-bottom:1px solid #e5e5ef;color:#111;font-weight:600">' . nl2br($h($v)) . '</td></tr>';
+    // etykieta nad wartoscia (nie obok) - na telefonie nic nie wychodzi poza ekran
+    $tab .= '<div style="padding:10px 18px;border-bottom:1px solid #e5e5ef">' .
+            '<div style="font-size:13px;color:#666;margin-bottom:3px">' . $h($k) . '</div>' .
+            '<div style="font-size:16px;color:#111;font-weight:600;word-break:break-word;overflow-wrap:anywhere">' . nl2br($h($v)) . '</div></div>';
 }
 $nr = preg_replace('/[^\d+]/', '', $tel);
-$html = '<!doctype html><html><body style="margin:0;padding:20px;background:#f4f4f8;font-family:Arial,sans-serif;font-size:15px">' .
-        '<div style="max-width:620px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e5e5ef">' .
+$html = '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:12px;background:#f4f4f8;font-family:Arial,sans-serif;font-size:15px">' .
+        '<div style="max-width:620px;width:100%;box-sizing:border-box;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e5e5ef">' .
         '<div style="background:#3d3fcf;color:#fff;padding:16px 20px;font-size:18px;font-weight:bold">Nowe zgłoszenie ze strony</div>' .
-        '<table style="width:100%;border-collapse:collapse">' . $tab . '</table>' .
+        $tab .
         '<div style="padding:16px 20px"><a href="tel:' . $h($nr) . '" style="display:inline-block;background:#3d3fcf;color:#fff;text-decoration:none;padding:12px 20px;border-radius:6px;font-weight:bold">Zadzwoń: ' . $h($tel) . '</a></div>' .
         '</div></body></html>';
 $tekst = '';
