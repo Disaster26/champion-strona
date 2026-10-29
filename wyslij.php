@@ -87,5 +87,5 @@ $tresc_maila = "--$granica\r\nContent-Type: text/plain; charset=UTF-8\r\nContent
                "--$granica\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" .
                chunk_split(base64_encode($html)) . "--$granica--\r\n";
 
-$ok = mail(ODBIORCA, '=?UTF-8?B?' . base64_encode($temat) . '?=', $tresc_maila, $naglowki, '-f' . NADAWCA);
+$ok = mail(ODBIORCA, '=?UTF-8?B?' . base64_encode($temat) . '?=', $tresc_maila, $naglowki);  // bez -f: home.pl odrzuca nadawce koperty bez skrzynki
 odpowiedz($ok, $ok ? 200 : 500);
