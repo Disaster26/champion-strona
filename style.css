@@ -32,8 +32,10 @@ figure{margin:0}
 /* naglowek */
 .top{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--line)}
 .top-in{height:var(--hdr);display:flex;align-items:center;gap:28px}
-.logo{flex:0 0 auto;display:block}
-.logo img{height:52px;width:auto}
+.logo{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;text-decoration:none}
+.logo img{height:46px;width:auto}
+/* 29.10: 'Nauka jazdy' jako tekst (w grafice logo byl nieczytelny) */
+.logo-tag{margin-top:3px;font-weight:800;font-size:13px;line-height:1;letter-spacing:.12em;text-transform:uppercase;color:#3f48cc}
 .menu{display:flex;gap:30px;margin-left:auto}
 .menu a{color:var(--ink);text-decoration:none;font-weight:600;font-size:17px;white-space:nowrap;padding:6px 0;border-bottom:3px solid transparent}
 .menu a:hover{border-color:var(--yel);color:var(--navy)}
@@ -280,7 +282,8 @@ figure{margin:0}
   :root{--hdr:60px}
   body{font-size:16.5px}
   .wrap{width:min(1200px,100% - 32px)}
-  .logo img{height:36px}
+  .logo img{height:32px}
+  .logo-tag{font-size:10.5px;margin-top:2px}
   .top-in{gap:8px}
   .tel{padding:9px 12px;font-size:16.5px;gap:6px;border-radius:8px}
   .tel svg{width:16px;height:16px}
@@ -359,7 +362,8 @@ figure{margin:0}
 @media (max-width:374px){
   .tel svg{display:none}
   .tel{padding:9px 10px;font-size:16px}
-  .logo img{height:32px}
+  .logo img{height:28px}
+  .logo-tag{font-size:9.5px}
   .kafel-foto{flex-basis:34%}
 }
 @media (prefers-reduced-motion:reduce){

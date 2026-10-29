@@ -200,6 +200,7 @@ def strona(sciezka, tytul, opis, tresc, glowna=False, schemy=None, preload='', n
   <div class="wrap top-in">
     <a class="logo" href="{dom}" aria-label="Nauka Jazdy Champion - strona główna">
       <img src="{R}img/logo-180.webp" srcset="{R}img/logo-180.webp 180w, {R}img/logo-360.webp 360w" sizes="134px" width="180" height="70" alt="Champion - nauka jazdy">
+      <span class="logo-tag">Nauka jazdy</span>
     </a>
     <nav class="menu" aria-label="Menu główne">
 {nav}    </nav>

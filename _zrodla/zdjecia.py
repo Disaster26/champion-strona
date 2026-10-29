@@ -100,7 +100,10 @@ def stare(prefix):
 
 # Yaris przed biurem: tablica, stary telefon na drzwiach auta i w oknie
 h = stare('44'); sh = h.width / 1500
-zamaz(h, [(1158, 1102, 1258, 1172), (898, 1008, 1002, 1052), (698, 1230, 802, 1294)], sh)
+zamaz(h, [(1158, 1102, 1258, 1172), (898, 1008, 1002, 1052)], sh)
+# 29.10 user: zamiast zamazanej tablicy przednia tablica z napisem CHAMPION (piksele oryginalu 1536x2048)
+import sys; sys.path.insert(0, TU); import tablica
+tablica.naklej(h, [(717, 1262), (816, 1280), (815, 1324), (716, 1302)])
 zapisz(proporcja(h, 4 / 5, .5, .62), 'hero', [600, 900, 1100])
 zapisz(proporcja(h, 3 / 2, .5, .52), 'hero-m', [480, 800, 1100])
 og = proporcja(h, 1200 / 630, .5, .55).resize((1200, 630), Image.LANCZOS)
@@ -117,7 +120,7 @@ zapisz(proporcja(stare('35'), 4 / 3), 'okres', [480, 900])
 zapisz(proporcja(stare('31'), 1), 'yaris-wnetrze', [480, 900])
 
 # logo (przezroczyste tlo) i ikony
-lg = Image.open(os.path.join(TU, 'logo-zrodlo.png')).convert('RGBA')  # logo ze starej strony
+lg = Image.open(os.path.join(TU, 'logo-bez-napisu.png')).convert('RGBA')  # 29.10: logo bez mikroskopijnego 'Nauka jazdy' (napis jest teraz tekstem w HTML)
 lg = lg.crop(lg.getbbox())
 for w in (180, 360):
     lg.resize((w, round(lg.height * w / lg.width)), Image.LANCZOS).save(os.path.join(OUT, f'logo-{w}.webp'), 'WEBP', quality=90, method=6)
