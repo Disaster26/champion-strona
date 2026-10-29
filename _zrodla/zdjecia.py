@@ -93,7 +93,8 @@ zapisz(kadr(p4, (540, 350, 960, 665), s4), 'kat-c', [480, 800, 1200])
 
 # 5. plac - Yaris i tyl ciezarowki z napisem kwalifikacji
 p5 = otworz(os.path.join(NOWE, '20261028_092518.jpg')); s5 = p5.width / 1400
-zamaz(p5, [(528, 493, 562, 509), (412, 396, 449, 412)], s5)  # obca ciezarowka + napis poprzedniego wlasciciela na plandece
+zamaz(p5, [(528, 493, 562, 509)], s5)  # obca ciezarowka
+tablica.zamaluj(p5, (1196, 1143, 1278, 1162))  # napis poprzedniego wlasciciela nad CHAMPION - zamalowany kolorem plandeki, nie rozmyty
 tablica.naklej(p5, [(1012, 1451), (1089, 1450), (1089, 1466), (1012, 1469)])  # tylna tablica MAN TGL szkoly
 # 29.10 user: Yaris szkoly na placu z tablica CHAMPION
 tablica.naklej(p5, [(2945, 1655), (3064, 1674), (3063, 1714), (2944, 1690)])

@@ -57,3 +57,20 @@ def naklej(im, quad, napis='CHAMPION'):
     warp = warp.filter(ImageFilter.GaussianBlur(0.5))
     im.paste(warp, (x0, y0), maska)
     return im
+
+
+def zamaluj(im, box):
+    """Zamalowanie malego napisu kolorem tla (srednia z ramki wokol prostokata) - bez rozmycia na sasiednie litery."""
+    from PIL import ImageStat
+    x0, y0, x1, y1 = box
+    ramka = [im.crop((x0, y0 - 6, x1, y0 - 1)), im.crop((x0, y1 + 1, x1, y1 + 6))]
+    kol = [tuple(int(c) for c in ImageStat.Stat(r).median) for r in ramka]
+    w, h = x1 - x0, y1 - y0
+    grad = Image.new('RGB', (1, 2)); grad.putpixel((0, 0), kol[0]); grad.putpixel((0, 1), kol[1])
+    lata = grad.resize((w, h), Image.BILINEAR)
+    m = Image.new('L', (w, h), 255).filter(ImageFilter.GaussianBlur(0))
+    maska = Image.new('L', (w + 8, h + 8), 0)
+    ImageDraw.Draw(maska).rectangle((4, 4, w + 3, h + 3), fill=255)
+    maska = maska.filter(ImageFilter.GaussianBlur(2)).crop((4, 4, w + 4, h + 4))
+    im.paste(lata, (x0, y0), maska)
+    return im
