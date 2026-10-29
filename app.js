@@ -66,15 +66,21 @@
       if (f.elements['_honey'].value) return;
       var btn = $('button[type="submit"]', f);
       btn.disabled = true; btn.textContent = 'Wysyłanie...';
+      /* 29.10: mail do biura ma byc czytelny od razu - w temacie kurs, imie i telefon (widac w skrzynce bez otwierania),
+         w tabeli tylko to, co potrzebne do oddzwonienia, z polskimi nazwami pol i godzina zgloszenia */
+      var nr = t.length === 9 ? t.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3') : tel.value.trim();
+      var teraz = new Date(), d2 = function (n) { return (n < 10 ? '0' : '') + n; };
+      var kiedy = d2(teraz.getDate()) + '.' + d2(teraz.getMonth() + 1) + '.' + teraz.getFullYear() + ', godz. ' + d2(teraz.getHours()) + ':' + d2(teraz.getMinutes());
       var dane = {
-        _subject: 'Zgłoszenie ze strony: ' + kurs.value,
+        _subject: 'Nowe zgłoszenie: ' + kurs.value + ' - ' + imie.value.trim() + ', tel. ' + nr,
         _template: 'table', _captcha: 'false',
         'Kurs': kurs.value,
         'Imię i nazwisko': imie.value.trim(),
-        'Telefon': tel.value.trim(),
-        email: ma || '-',
-        'Pytanie': tresc.value.trim() || '-',
-        'Strona': location.href.split('?')[0]
+        'Telefon (oddzwoń)': nr,
+        'E-mail': ma || 'nie podano',
+        'Pytanie / uwagi': tresc.value.trim() || 'brak',
+        'Wysłano': kiedy,
+        'Z podstrony': (document.title.split(' - ')[0] || '') + ' (' + location.href.split('?')[0].split('#')[0] + ')'
       };
       if (ma) dane._replyto = ma;
       fetch(f.getAttribute('data-adres'), { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(dane) })
