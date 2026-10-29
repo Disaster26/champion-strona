@@ -7,7 +7,7 @@
 Folder _zrodla nie jest publikowany (GitHub Pages pomija go przez _config.yml; na hosting go nie wgrywamy).
 Wszystkie dane firmy sa w stalych ponizej - zmiana w jednym miejscu zmienia cala strone.
 """
-import json, os, sys, html
+import json, os, sys, html, re, hashlib
 from urllib.parse import quote
 
 PROD = '--produkcja' in sys.argv
@@ -36,7 +36,9 @@ G_PLAC = 'https://www.google.com/maps/search/?api=1&query=52.72346%2C15.19181'
 G_PLAC_TRASA = 'https://www.google.com/maps/dir/?api=1&destination=52.72346%2C15.19181'
 PDF_STANDARDY = 'dokumenty/standardy-ochrony-maloletnich.pdf'
 
-NAV = [('oferta/', 'Kursy'), ('cennik/', 'Cennik'), ('galeria/', 'O szkole'), ('kontakt/', 'Kontakt')]
+NAV = [('oferta/', 'Kursy'), ('cennik/', 'Cennik'), ('galeria/', 'O szkole'), ('blog/', 'Blog'), ('kontakt/', 'Kontakt')]
+# w stopce dodatkowo FAQ
+NAV_STOPKA = NAV[:4] + [('faq/', 'Pytania (FAQ)')] + NAV[4:]
 
 KURSY_FORM = ['Kategoria B', 'Kategoria B+E', 'Kategoria C', 'Kategoria C+E', 'Kwalifikacja wstępna C, CE', 'Szkolenie okresowe C, CE', 'Inne pytanie']
 
@@ -58,6 +60,15 @@ def img(name, alt, sizes, R, eager=False, cls=''):
     c = f' class="{cls}"' if cls else ''
     return (f'<img{c} src="{R}img/{fn}" srcset="{srcset}" sizes="{sizes}" alt="{e(alt)}" '
             f'width="{W}" height="{H}" {load} decoding="async">')
+
+
+def og_obraz(nazwa=None):
+    if nazwa:
+        fn, w, h = INFO[nazwa][-1]
+        return (f'<meta property="og:image" content="{DOMENA}/img/{fn}">\n'
+                f'<meta property="og:image:width" content="{w}">\n<meta property="og:image:height" content="{h}">')
+    return (f'<meta property="og:image" content="{DOMENA}/img/og.jpg">\n'
+            '<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="630">')
 
 
 def najwiekszy(name):
@@ -149,21 +160,22 @@ def schema_firma():
     }
 
 
-def okruszki(sciezka, nazwa):
+def okruszki(sciezka, nazwa, posrednie=()):
+    """posrednie: [(sciezka, nazwa)] miedzy strona glowna a biezaca (np. Blog dla wpisu)."""
+    el = [('', 'Strona główna')] + list(posrednie) + [(sciezka, nazwa)]
     return {'@context': 'https://schema.org', '@type': 'BreadcrumbList', 'itemListElement': [
-        {'@type': 'ListItem', 'position': 1, 'name': 'Strona główna', 'item': DOMENA + '/'},
-        {'@type': 'ListItem', 'position': 2, 'name': nazwa, 'item': DOMENA + '/' + sciezka}]}
+        {'@type': 'ListItem', 'position': i + 1, 'name': n, 'item': DOMENA + '/' + s} for i, (s, n) in enumerate(el)]}
 
 
 # ---------------------------------------------------------------- szkielet strony
-def strona(sciezka, tytul, opis, tresc, glowna=False, schemy=None, preload='', noindex=False, base=None):
-    R = '' if sciezka == '' else '../'
+def strona(sciezka, tytul, opis, tresc, glowna=False, schemy=None, preload='', noindex=False, base=None, og_typ='website', og_img=None):
+    R = '../' * sciezka.count('/')
     if base is not None:
         R = base
     robots = '<meta name="robots" content="noindex, nofollow">\n' if (not PROD or noindex) else ''
     nav = ''
     for href, nazwa in NAV:
-        cur = ' aria-current="page"' if sciezka == href else ''
+        cur = ' aria-current="page"' if sciezka == href or (href == 'blog/' and sciezka.startswith('blog/')) else ''
         nav += f'      <a href="{R}{href}"{cur}>{nazwa}</a>\n'
     sch = ''
     for s in (schemy or []):
@@ -178,15 +190,13 @@ def strona(sciezka, tytul, opis, tresc, glowna=False, schemy=None, preload='', n
 {robots}<title>{e(tytul)}</title>
 <meta name="description" content="{e(opis)}">
 {canon}<meta name="theme-color" content="#3f48cc">
-<meta property="og:type" content="website">
+<meta property="og:type" content="{og_typ}">
 <meta property="og:locale" content="pl_PL">
 <meta property="og:site_name" content="Nauka Jazdy Champion Witnica">
 <meta property="og:title" content="{e(tytul)}">
 <meta property="og:description" content="{e(opis)}">
 <meta property="og:url" content="{DOMENA}/{sciezka}">
-<meta property="og:image" content="{DOMENA}/img/og.jpg">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
+{og_obraz(og_img)}
 <link rel="icon" href="{R}favicon.ico" sizes="32x32">
 <link rel="icon" href="{R}favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="{R}apple-touch-icon.png">
@@ -237,7 +247,7 @@ def strona(sciezka, tytul, opis, tresc, glowna=False, schemy=None, preload='', n
     </div>
     <ul class="st-nav">
       <li><a href="{dom}">Strona główna</a></li>
-{''.join(f'      <li><a href="{R}{h}">{n}</a></li>{chr(10)}' for h, n in NAV)}    </ul>
+{''.join(f'      <li><a href="{R}{h}">{n}</a></li>{chr(10)}' for h, n in NAV_STOPKA)}    </ul>
   </div>
   <div class="wrap st-dol">
     <p>© <span id="rok">2026</span> Nauka Jazdy Champion Aurelia Gajewska, <span class="nw">NIP 596-121-01-26</span>, <span class="nw">REGON 543119611</span></p>
@@ -256,7 +266,27 @@ def strona(sciezka, tytul, opis, tresc, glowna=False, schemy=None, preload='', n
 '''
 
 
+# 29.10: wersja pliku liczona z zawartosci (GitHub Pages trzyma pliki 10 min - bez tego nowy HTML
+# potrafil zaladowac stary style.css i stare obrazki). Dopisywane do kazdego adresu zasobu w HTML.
+_ZASOB = re.compile(r'(?<![\w./-])((?:(?:\.\./)+|/champion-strona/|/|https://[\w.-]+/)?)'
+                    r'(img/[\w.-]+\.(?:webp|jpg|png)|style\.css|app\.js|favicon\.ico|favicon\.svg|apple-touch-icon\.png)'
+                    r'(?:\?v=[\w]*)?(?=["\s,)])')
+_HASZE = {}
+
+
+def hasz(plik):
+    if plik not in _HASZE:
+        with open(os.path.join(ROOT, plik), 'rb') as f:
+            _HASZE[plik] = hashlib.md5(f.read()).hexdigest()[:8]
+    return _HASZE[plik]
+
+
+def wersjonuj(tekst):
+    return _ZASOB.sub(lambda m: f'{m.group(1)}{m.group(2)}?v={hasz(m.group(2))}', tekst)
+
+
 def zapisz(sciezka, tekst, plik='index.html'):
+    tekst = wersjonuj(tekst)
     d = os.path.join(ROOT, sciezka)
     os.makedirs(d, exist_ok=True)
     with open(os.path.join(d, plik), 'w', encoding='utf-8', newline='\n') as f:
@@ -264,7 +294,7 @@ def zapisz(sciezka, tekst, plik='index.html'):
 
 
 # ---------------------------------------------------------------- wspolne bloki
-def ph(h1, lead, R, foto=None, foto_alt=''):
+def ph(h1, lead, R, foto=None, foto_alt='', nad=''):
     if foto:
         f = f'\n    <figure class="ph-foto">{img(foto, foto_alt, "(max-width:760px) 100vw, 44vw", R, eager=True)}</figure>'
         cls = 'ph'
@@ -272,7 +302,7 @@ def ph(h1, lead, R, foto=None, foto_alt=''):
         f = ''; cls = 'ph ph-bez'
     return f'''<section class="{cls}">
   <div class="wrap ph-in">
-    <div class="ph-tx">
+    <div class="ph-tx">{nad}
       <h1>{h1}</h1>
       <p class="ph-lead">{lead}</p>
     </div>{f}
@@ -765,9 +795,165 @@ def przekierowanie(stary, nowy, nazwa):
     zapisz(stary, s)
 
 
+# ---------------------------------------------------------------- blog i FAQ
+def _wczytaj_blog():
+    # tresc wpisow w osobnym pliku; import przez sciezke, bo build jest uruchamiany z -I
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('blog_tresc', os.path.join(os.path.dirname(__file__), 'blog_tresc.py'))
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+BT = _wczytaj_blog()
+WPISY = {w['slug']: w for w in BT.WPISY}
+S_ART = '(max-width:760px) calc(100vw - 32px), 720px'
+
+
+def tokeny(t, R):
+    t = t.replace('{R}', R).replace('{TEL_H}', TEL[1]).replace('{TEL}', TEL[0])
+    # twarde spacje: '3 500 kg', '2 900 zł' nie lamia sie na koncu wiersza (nie dotyczy numerow telefonow - te sa w <a>, nowrap)
+    t = re.sub(r'(?<=\d) (?=\d{3}(?!\d))', '\u00a0', t)
+    return re.sub(r'(?<=\d) (?=(?:zł|kg|t|km/h|r\.|lat|dni|godzin|minut)(?![\w]))', '\u00a0', t)
+
+
+def foto_art(t, R):
+    def zam(m):
+        nazwa, alt, podpis = m.group(1).split('|')
+        return (f'<figure class="art-foto">{img(nazwa.strip(), alt.strip(), S_ART, R)}'
+                f'<figcaption>{podpis.strip()}</figcaption></figure>')
+    return re.sub(r'\[\[FOTO ([^\]]+)\]\]', zam, t)
+
+
+def faq_html(pary, R):
+    return ''.join(f'''
+      <details class="faq">
+        <summary>{q}</summary>
+        <div class="faq-odp"><p>{tokeny(a, R)}</p></div>
+      </details>''' for q, a in pary)
+
+
+def faq_schema(pary):
+    czysc = lambda t: re.sub(r'<[^>]+>', '', tokeny(t, '')).strip()
+    return {'@context': 'https://schema.org', '@type': 'FAQPage', 'mainEntity': [
+        {'@type': 'Question', 'name': q, 'acceptedAnswer': {'@type': 'Answer', 'text': czysc(a)}} for q, a in pary]}
+
+
+def okr_html(R, posrednie, nazwa):
+    a = f'<a href="{R or "./"}">Strona główna</a>'
+    for h, n in posrednie:
+        a += f'<span aria-hidden="true">/</span><a href="{R}{h}">{n}</a>'
+    return f'\n      <nav class="okr" aria-label="Okruszki">{a}<span aria-hidden="true">/</span><span aria-current="page">{nazwa}</span></nav>'
+
+
+def wpis(w):
+    R = '../../'
+    sc = f'blog/{w["slug"]}/'
+    data = f'\n      <p class="art-data"><time datetime="{BT.DATA}">{BT.DATA_TXT}</time></p>'
+    tresc = ph(w['h1'], w['lead'], R, w['foto'], w['foto_alt'],
+               nad=okr_html(R, [('blog/', 'Blog')], 'Wpis') + data)
+    zob = ''.join(f'<li><a href="{R}blog/{s}/">{WPISY[s]["h1"]}</a></li>' for s in w['zobacz'])
+    tresc += f'''
+
+<section class="sek art-sek">
+  <article class="wrap art">
+{foto_art(tokeny(w['tresc'], R), R)}
+    <div class="art-zapis">
+      <p><strong>Chcesz zapisać się na kurs albo zapytać o termin?</strong> Zadzwoń: <a href="{TEL[1]}">{TEL[0]}</a> albo zostaw numer w formularzu, a biuro oddzwoni.</p>
+      <a class="btn btn-maly" href="{R}kontakt/?kurs={quote(w['kurs'])}#zapis">Zapisz się</a>
+    </div>
+
+    <h2 id="pytania">Najczęstsze pytania</h2>
+    <div class="faq-lista">{faq_html(w['faq'], R)}
+    </div>
+
+    <div class="art-dalej">
+      <h2>Przeczytaj też</h2>
+      <ul class="lista">{zob}<li><a href="{R}faq/">Pytania i odpowiedzi - wszystko w jednym miejscu</a></li></ul>
+      <a class="dalej" href="{R}blog/">Wszystkie wpisy</a>
+    </div>
+  </article>
+</section>
+
+{cta(R)}'''
+    fn = INFO[w['foto']][-1][0]
+    art = {'@context': 'https://schema.org', '@type': 'BlogPosting',
+           'headline': w['h1'], 'description': w['opis'], 'inLanguage': 'pl-PL',
+           'image': f'{DOMENA}/img/{fn}', 'datePublished': BT.DATA, 'dateModified': BT.DATA,
+           'mainEntityOfPage': {'@type': 'WebPage', '@id': f'{DOMENA}/{sc}'},
+           'author': {'@type': 'Organization', 'name': 'Nauka Jazdy Champion', 'url': DOMENA + '/'},
+           'publisher': {'@type': 'Organization', '@id': DOMENA + '/#osk', 'name': 'Nauka Jazdy Champion',
+                         'logo': {'@type': 'ImageObject', 'url': DOMENA + '/img/logo-360.webp'}}}
+    zapisz(sc, strona(sc, w['tytul'], w['opis'], tresc, og_typ='article', og_img=w['foto'],
+                      schemy=[art, faq_schema(w['faq']), okruszki(sc, w['h1'], [('blog/', 'Blog')])]))
+
+
+def blog_lista():
+    R = '../'
+    S = '(max-width:760px) calc(100vw - 32px), (max-width:1024px) 46vw, 380px'
+    k = ''
+    for w in BT.WPISY:
+        k += f'''      <article class="wpis">
+        <a class="wpis-foto" href="{R}blog/{w['slug']}/" tabindex="-1" aria-hidden="true">{img(w['foto'], w['foto_alt'], S, R)}</a>
+        <div class="wpis-tx">
+          <time datetime="{BT.DATA}">{BT.DATA_TXT}</time>
+          <h2><a href="{R}blog/{w['slug']}/">{w['h1']}</a></h2>
+          <p>{w['kafel']}</p>
+          <a class="dalej" href="{R}blog/{w['slug']}/" aria-hidden="true" tabindex="-1">Czytaj</a>
+        </div>
+      </article>
+'''
+    tresc = ph('Blog', 'Praktycznie o prawie jazdy: ile kosztuje kurs w Witnicy, jak wygląda egzamin w WORD w Gorzowie Wielkopolskim, kiedy potrzebne jest B+E, a kiedy kwalifikacja wstępna.', R,
+               nad=okr_html(R, [], 'Blog')) + f'''
+
+<section class="sek sek-alt">
+  <div class="wrap">
+    <div class="wpisy">
+{k}    </div>
+    <p class="wpisy-faq">Szukasz krótkiej odpowiedzi? Zajrzyj do <a href="{R}faq/">pytań i odpowiedzi</a>.</p>
+  </div>
+</section>
+
+{cta(R)}'''
+    lista = {'@context': 'https://schema.org', '@type': 'Blog', 'name': 'Blog Nauki Jazdy Champion', 'url': DOMENA + '/blog/',
+             'inLanguage': 'pl-PL', 'publisher': {'@type': 'Organization', '@id': DOMENA + '/#osk', 'name': 'Nauka Jazdy Champion'},
+             'blogPost': [{'@type': 'BlogPosting', 'headline': w['h1'], 'url': f"{DOMENA}/blog/{w['slug']}/", 'datePublished': BT.DATA} for w in BT.WPISY]}
+    zapisz('blog', strona('blog/', 'Blog - prawo jazdy w Witnicy i egzamin w WORD Gorzów | OSK Champion',
+                          'Poradniki OSK Champion z Witnicy: koszt prawa jazdy kat. B, egzamin praktyczny w WORD Gorzów, B+E i kod 96, kat. C i C+E z kwalifikacją wstępną, przygotowanie do kursu.',
+                          tresc, schemy=[lista, okruszki('blog/', 'Blog')]))
+
+
+def faq_strona():
+    R = '../'
+    grupy = ''
+    wszystkie = []
+    for h, pary in BT.FAQ:
+        wszystkie += pary
+        grupy += f'''    <div class="faq-grupa">
+      <h2>{h}</h2>
+      <div class="faq-lista">{faq_html(pary, R)}
+      </div>
+    </div>
+'''
+    tresc = ph('Pytania i odpowiedzi', 'Krótkie odpowiedzi na pytania, które najczęściej słyszymy w biurze w Witnicy: zapisy, ceny, egzaminy w WORD Gorzów i kursy na przyczepę oraz ciężarówkę.', R,
+               nad=okr_html(R, [], 'Pytania i odpowiedzi')) + f'''
+
+<section class="sek">
+  <div class="wrap art">
+{grupy}    <p class="faq-dol">Nie ma tu twojego pytania? Zadzwoń: <a href="{TEL[1]}">{TEL[0]}</a> albo napisz przez <a href="{R}kontakt/#zapis">formularz</a>. Dłuższe poradniki znajdziesz na <a href="{R}blog/">blogu</a>.</p>
+  </div>
+</section>
+
+{cta(R)}'''
+    zapisz('faq', strona('faq/', 'Pytania i odpowiedzi - kursy prawa jazdy Witnica | OSK Champion',
+                         'Najczęstsze pytania o kursy prawa jazdy w OSK Champion w Witnicy: zapisy i PKK, ceny i płatności, egzaminy w WORD Gorzów, kursy B+E, C i C+E, kod 95.',
+                         tresc, schemy=[faq_schema(wszystkie), okruszki('faq/', 'Pytania i odpowiedzi')]))
+
+
 def sitemap_robots():
-    urls = ['', 'oferta/', 'cennik/', 'galeria/', 'kontakt/', 'polityka-prywatnosci/']
-    pri = {'': '1.0', 'polityka-prywatnosci/': '0.3'}
+    urls = ['', 'oferta/', 'cennik/', 'galeria/', 'kontakt/', 'blog/'] + [f'blog/{w["slug"]}/' for w in BT.WPISY] + ['faq/', 'polityka-prywatnosci/']
+    pri = {'': '1.0', 'polityka-prywatnosci/': '0.3', 'blog/': '0.7', 'faq/': '0.7'}
+    pri.update({f'blog/{w["slug"]}/': '0.6' for w in BT.WPISY})
     x = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     for u in urls:
         x += f'  <url><loc>{DOMENA}/{u}</loc><priority>{pri.get(u, "0.8")}</priority></url>\n'
@@ -779,6 +965,9 @@ def sitemap_robots():
 
 if __name__ == '__main__':
     glowna(); oferta(); cennik(); galeria(); kontakt(); polityka(); nie_znaleziono()
+    blog_lista(); faq_strona()
+    for w in BT.WPISY:
+        wpis(w)
     przekierowanie('kontakt-2', 'kontakt/', 'Kontakt')
     przekierowanie('polityka-cookies', 'polityka-prywatnosci/', 'Polityka prywatności')
     sitemap_robots()
